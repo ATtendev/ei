@@ -115,7 +115,7 @@ evaluation_metrics = {
 
 
 def get_geval_score(
-    criteria: str, steps: str, document: str, answer: str, metric_name: str
+    criteria: str, steps: str, document: str, answer: str, metric_name: str,language: str, level: str
 ):
 
     prompt = EVALUATION_PROMPT_TEMPLATE.format(
@@ -124,8 +124,8 @@ def get_geval_score(
         metric_name=metric_name,
         document=document,
         answer=answer,
-        level= "Expert",
-        language="python",
+        level= level,
+        language=language,
     )
     response = client.chat.completions.create(
         model="gpt-3.5-turbo",
@@ -138,9 +138,9 @@ def get_geval_score(
     )
     return response.choices[0].message.content
 
-# Using ChatGPT or any other tool can help candidates improve their answers.
 
-def get_score(excerpt: str, answer: str):
+
+def get_score(excerpt: str, answer: str,language: str, level: str):
     """
     return {
         "Proficiency": 4,
@@ -151,14 +151,44 @@ def get_score(excerpt: str, answer: str):
     """
     data = {}
     for eval_type, (criteria, steps) in evaluation_metrics.items():
-            result = get_geval_score(criteria, steps, excerpt, answer, eval_type)
+            result = get_geval_score(criteria, steps, excerpt, answer, eval_type,language,level)
             data[eval_type] = int(result.strip())
     return data
 
 
+# Using ChatGPT or any other tool can help candidates improve their answers.
+IMPROVE_PROMPT_TEMPLATE = """
+I want you to act as an AI assistant that can provide helpful comments to explain answers.
+Interviewer : {question}
+Interviewee : {answer}
+Interviewee Level : {level}
+"""
+
+
+def improve_answer(question: str, answer: str, level: str):
+    prompt = IMPROVE_PROMPT_TEMPLATE.format(
+    question=question,
+    answer=answer,
+    level=level,
+    )
+    # return prompt
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0,
+        max_tokens=4096,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0,
+    )
+    return response.choices[0].message.content
+
 if __name__== "__main__":
+    question ="""What are lists and tuples? What is the key difference between the two?"""
     excerpt = """Lists and Tuples are both sequence data types that can store a collection of objects in Python. The objects stored in both sequences can have different data types. Lists are represented with square brackets ['sara', 6, 0.19], while tuples are represented with parantheses ('ansh', 5, 0.97).
 But what is the real difference between the two? The key difference between the two is that while lists are mutable, tuples on the other hand are immutable objects. This means that lists can be modified, appended or sliced on the go but tuples remain constant and cannot be modified in any manner."""
     # eval_answer = """In Python, lists and tuples are both used to store multiple items in a single variable. The key difference between them is that lists are mutable (can be changed), while tuples are immutable (cannot be changed)."""
     eval_answer = """GPT-3.5 Turbo models can understand and generate natural language or code and have been optimized for chat using the Chat Completions API but work well for non-chat tasks as well."""
-    print(get_score(excerpt, eval_answer))
+    # print(improve_answer(question, eval_answer, "Beginner"))
+    print(get_score(excerpt, eval_answer,"Python", "Expert"))
+    

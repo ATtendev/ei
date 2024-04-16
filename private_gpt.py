@@ -37,7 +37,7 @@ def get_q_a(p_lang,p_level,p_exp):
         
     result = ast.literal_eval(response)
     print("old answer:", result['a'])
-    system_content = f"question: {result["q"]}, answer: {result['a']}. Make answer better for programming Level: {p_level}. Response only answer",
+    system_content = f"question: {result['q']}, answer: {result['a']}. Make answer better for programming Level: {p_level}. Response only answer"
     
     final_answer = ""
     for i in client.contextual_completions.prompt_completion_stream(
